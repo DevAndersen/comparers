@@ -11,13 +11,13 @@ public class LogicalStringComparer : IComparer<string?>
 {
     private readonly bool _preferNumbersWithoutPrependingZeros;
 
-    public LogicalStringComparer() : this(LogicalSortingOptions.None)
+    public LogicalStringComparer() : this(LogicalStringComparerOptions.None)
     {
     }
 
-    public LogicalStringComparer(LogicalSortingOptions options)
+    public LogicalStringComparer(LogicalStringComparerOptions options)
     {
-        _preferNumbersWithoutPrependingZeros = options.HasFlag(LogicalSortingOptions.PreferNumbersWithoutPrependingZeros);
+        _preferNumbersWithoutPrependingZeros = options.HasFlag(LogicalStringComparerOptions.PreferNumbersWithoutPrependingZeros);
     }
 
     public int Compare(string? x, string? y)

@@ -1,7 +1,7 @@
 ﻿namespace DevAndersen.Comparers;
 
 [Flags]
-public enum LogicalSortingOptions
+public enum LogicalStringComparerOptions
 {
     None = 0,
 
