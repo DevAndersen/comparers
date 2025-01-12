@@ -1,9 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevAndersen.Comparers", "src\DevAndersen.Comparers\DevAndersen.Comparers.csproj", "{DCA8B97B-7D12-4485-B854-D1CC5A5B2BE1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevAndersen.Comparers.Tests", "tests\DevAndersen.Comparers.Tests\DevAndersen.Comparers.Tests.csproj", "{1DE39D6D-EB7A-412D-B9D9-1EEE3C009B01}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DCA8B97B-7D12-4485-B854-D1CC5A5B2BE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCA8B97B-7D12-4485-B854-D1CC5A5B2BE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCA8B97B-7D12-4485-B854-D1CC5A5B2BE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCA8B97B-7D12-4485-B854-D1CC5A5B2BE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DE39D6D-EB7A-412D-B9D9-1EEE3C009B01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DE39D6D-EB7A-412D-B9D9-1EEE3C009B01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DE39D6D-EB7A-412D-B9D9-1EEE3C009B01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DE39D6D-EB7A-412D-B9D9-1EEE3C009B01}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
