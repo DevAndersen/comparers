@@ -9,14 +9,20 @@
 /// </remarks>
 public class LogicalStringComparer : IComparer<string?>
 {
+    private readonly StringComparison _stringComparison;
     private readonly bool _preferNumbersWithoutPrependingZeros;
 
-    public LogicalStringComparer() : this(LogicalStringComparerOptions.None)
+    public LogicalStringComparer() : this(StringComparison.CurrentCulture, LogicalStringComparerOptions.None)
     {
     }
 
-    public LogicalStringComparer(LogicalStringComparerOptions options)
+    public LogicalStringComparer(StringComparison stringComparison) : this(stringComparison, LogicalStringComparerOptions.None)
     {
+    }
+
+    public LogicalStringComparer(StringComparison stringComparison, LogicalStringComparerOptions options)
+    {
+        _stringComparison = stringComparison;
         _preferNumbersWithoutPrependingZeros = options.HasFlag(LogicalStringComparerOptions.PreferNumbersWithoutPrependingZeros);
     }
 
@@ -24,11 +30,8 @@ public class LogicalStringComparer : IComparer<string?>
     {
         return (x, y) switch
         {
-            (null, null) => 0,
-            (null, _) => -1,
-            (_, null) => 1,
-            _ when x == y => 0,
-            _ => ComplexCompare(x, y)
+            (not null, not null) when !x.Equals(y) => ComplexCompare(x, y),
+            _ => StringComparer.FromComparison(_stringComparison).Compare(x, y)
         };
     }
 
@@ -40,56 +43,63 @@ public class LogicalStringComparer : IComparer<string?>
         ReadOnlySpan<char> shortest = isXShortest ? x : y;
         ReadOnlySpan<char> longest = isXShortest ? y : x;
 
+        int index = 0;
+
         do
         {
-            char shortChar = shortest[0];
-            char longChar = longest[0];
-
-            // If the first char of both spans are digits, compare the spans as numbers.
-            if (IsDigit(shortChar) && IsDigit(longChar))
+            if (shortest.IsEmpty || longest.IsEmpty)
             {
-                int numberCompareResult = CompareNumerics(shortest, longest, out int readChars);
+                int comparerResult = shortest.CompareTo(longest, _stringComparison);
+
+                return isXShortest
+                    ? comparerResult
+                    : -comparerResult;
+            }
+
+            int readChars;
+
+            if (IsDigit(shortest[0]) && IsDigit(longest[0]))
+            {
+                int numberCompareResult = CompareNumerics(shortest, longest, out readChars);
                 if (numberCompareResult != 0)
                 {
                     return isXShortest
                         ? numberCompareResult
                         : -numberCompareResult;
                 }
-
-                shortest = shortest[readChars..];
-                longest = longest[readChars..];
             }
             else
             {
-                if (shortChar != longChar)
+                int shortestNonDigitCount = shortest.IndexOfAnyInRange('0', '9');
+                int longestNonDigitCount = longest.IndexOfAnyInRange('0', '9');
+
+                // Create a slice of each span that only contains non-digit characters.
+                ReadOnlySpan<char> nonDigitsOnlyShortest = shortestNonDigitCount == -1
+                    ? shortest
+                    : shortest[..shortestNonDigitCount];
+
+                ReadOnlySpan<char> nonDigitsOnlyLongest = longestNonDigitCount == -1
+                    ? longest
+                    : longest[..longestNonDigitCount];
+
+                int nonDigitComparison = nonDigitsOnlyShortest.CompareTo(nonDigitsOnlyLongest, _stringComparison);
+
+                if (nonDigitComparison != 0)
                 {
-                    char shortLower = char.ToLowerInvariant(shortChar);
-                    char longLower = char.ToLowerInvariant(longChar);
-
-                    // Perform a case insensitive comparison.
-                    int charCompareResult = shortLower.CompareTo(longLower);
-                    if (charCompareResult != 0)
-                    {
-                        return isXShortest
-                            ? charCompareResult
-                            : -charCompareResult;
-                    }
-
-                    // Slice the spans by one char.
-                    shortest = shortest[1..];
-                    longest = longest[1..];
+                    return isXShortest
+                        ? nonDigitComparison
+                        : -nonDigitComparison;
                 }
-                // Slice the spans by one char.
-                shortest = shortest[1..];
-                longest = longest[1..];
-            }
-        }
-        while (shortest.Length > 0);
 
-        // The longest string begins with the exact same sequence as all of the shortest string.
-        return isXShortest
-            ? -1
-            : 1;
+                readChars = shortestNonDigitCount;
+            }
+
+            shortest = shortest[readChars..];
+            longest = longest[readChars..];
+        }
+        while (index < shortest.Length);
+
+        throw new InvalidOperationException();
     }
 
     private int CompareNumerics(ReadOnlySpan<char> x, ReadOnlySpan<char> y, out int readChars)
@@ -122,9 +132,7 @@ public class LogicalStringComparer : IComparer<string?>
         int compareValue = (canParseX, canParseY) switch
         {
             (true, true) => xValue.CompareTo(yValue), // Both sequences are parsable, compare their parsed values.
-            (false, false) => x.SequenceCompareTo(y), // Neither sequence are parsable, compare their sequences.
-            (true, false) => -1,
-            (false, true) => 1
+            (_, _) => x.SequenceCompareTo(y), // Neither sequence are parsable, compare their sequences.
         };
 
         // Determine if both x and y are valid ulongs, and if they compare as being numerically equal.
@@ -134,9 +142,11 @@ public class LogicalStringComparer : IComparer<string?>
             readChars = default;
 
             // Determines if numbers with prepending zeros should be preferred.
+            int unevenZeroComparison = x.CompareTo(y, StringComparison.Ordinal);
+
             return (x.Length > y.Length) != _preferNumbersWithoutPrependingZeros
-                ? -1
-                : 1;
+                ? -unevenZeroComparison
+                : unevenZeroComparison;
         }
 
         readChars = xDigitCount;

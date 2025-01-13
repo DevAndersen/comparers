@@ -1,4 +1,8 @@
-﻿namespace DevAndersen.Comparers.Tests;
+﻿using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+
+namespace DevAndersen.Comparers.Tests;
 
 public class LogicalStringComparerTests
 {
@@ -14,10 +18,10 @@ public class LogicalStringComparerTests
     public void Compare_SameValue_ReturnsZero(string? value)
     {
         // Arrange
-        IComparer<string?> comparer = new LogicalStringComparer();
+        IComparer<string?> logicalComparer = new LogicalStringComparer(StringComparison.Ordinal);
 
         // Act
-        int result = comparer.Compare(value, value);
+        int result = logicalComparer.Compare(value, value);
 
         // Assert
         Assert.Equal(0, result);
@@ -34,11 +38,11 @@ public class LogicalStringComparerTests
     public void Compare_ValidAndNull_ReturnsExpected(string? value)
     {
         // Arrange
-        IComparer<string?> comparer = new LogicalStringComparer();
+        IComparer<string?> logicalComparer = new LogicalStringComparer(StringComparison.Ordinal);
 
         // Act
-        int valueAndNull = comparer.Compare(value, null);
-        int nullAndValue = comparer.Compare(null, value);
+        int valueAndNull = logicalComparer.Compare(value, null);
+        int nullAndValue = logicalComparer.Compare(null, value);
 
         // Assert
         Assert.Equal(1, valueAndNull);
@@ -52,7 +56,7 @@ public class LogicalStringComparerTests
     public void Compare_NonNumericString_ReturnsSameAsStringComparer(string? x, string? y)
     {
         // Arrange
-        IComparer<string?> logicalComparer = new LogicalStringComparer();
+        IComparer<string?> logicalComparer = new LogicalStringComparer(StringComparison.Ordinal);
         IComparer<string?> stringComparer = StringComparer.Ordinal;
 
         // Act
@@ -65,5 +69,29 @@ public class LogicalStringComparerTests
         // Assert
         Assert.Equal(stringComparerResultXAndY, logicalComparerResultXAndY);
         Assert.Equal(stringComparerResultYAndX, logicalComparerResultYAndX);
+    }
+
+    [Fact]
+    public void Order_LargeDataSet_DoesNotThrow()
+    {
+        IComparer<string?> logicalComparer = new LogicalStringComparer(StringComparison.Ordinal);
+
+        int count = 1_000_000;
+        string[] strings = new string[count];
+
+        Span<byte> hashBuffer = stackalloc byte[MD5.HashSizeInBytes];
+        Guid guid;
+
+        for (int i = 0; i < count; i++)
+        {
+            BinaryPrimitives.WriteInt32BigEndian(hashBuffer, i);
+
+            guid = new Guid(hashBuffer);
+            strings[i] = guid.ToString().Replace("-", string.Empty);
+        }
+
+        string[] orderedStrings = strings
+            .Order(logicalComparer)
+            .ToArray();
     }
 }
